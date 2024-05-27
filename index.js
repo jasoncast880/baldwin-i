@@ -1,5 +1,29 @@
 const Alexa = require('ask-sdk-core');
 
+import { MongoClient } from "mongodb";
+
+const uri = "mongodb+srv://plebish:H20xLFJPDvxJJy16@cluster0.3pppkdk.mongodb.net/?appName=mongosh+2.2.6"
+
+const client = new MongoClient(uri);
+
+async function run() {
+  try {
+    const database = client.db("insertDB");
+    const haiku = database.collection("haiku");
+
+    const doc = {
+      title: "Record of seojdawd",
+      content: "No bytes"
+    }
+    const result = await haiku.insertOne(doc);
+
+    console.log(`a doc was inserted with the _id: ${result.insertedId}`);
+  } finally {
+    
+    await client.close();
+  }
+}
+
 const DOCUMENT_ID = "regal-visage";
 
 const datasource = {
@@ -8,7 +32,7 @@ const datasource = {
     "properties": {
       "backgroundImage": "https://d2o906d8ln7ui1.cloudfront.net/images/response_builder/background-green.png",
       "foregroundImageLocation": "top",
-      "foregroundImageSource": "https://d2o906d8ln7ui1.cloudfront.net/images/response_builder/asparagus.jpeg",
+      "foregroundImageSource": "https://d28jypdghna36e.cloudfront.net/images/nerd.jpg",
       "headerTitle": "Baldwin I",
       "headerSubtitle": "",
       "hintText": "",
@@ -60,27 +84,45 @@ const APLRequestHandler = {
             handlerInput.responseBuilder.addDirective(aplDirective);
         }
 
+        const speakOutput = `Hello, I'm Baldwin!`; 
+    
         // send out skill response
-        return handlerInput.responseBuilder.getResponse();
+        return handlerInput.responseBuilder
+          .speak(speakOutput)
+          .getResponse();
     }
 };
 
-
-/*
-const HelloHandler = {
+const DemoDataHandler = {
   canHandle(handlerInput) {
-    return handlerInput.requestEnvelope.request.type === 'IntentRequest'
-      && handlerInput.requestEnvelope.request.intent.name === 'HelloIntent';
+    return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
+      && Alexa.getIntentName(handlerInput.requestEnvelope) === 'DemoDataIntent';
   },
   handle(handlerInput) {
-    const speakOutput = 'Baldwin at your service!';
+    
+    run().catch(console.dir);
 
     return handlerInput.responseBuilder
-      .speak(speakOutput) 
+      .speak(speakOutput)
       .getResponse();
-  },
+  }
 };
-*/
+
+const MovesListHandler = {
+  canHandle(handlerInput) {
+    return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
+      && Alexa.getIntentName(handlerInput.requestEnvelope) === 'PlayMoveIntent';
+  },
+  handle(handlerInput) {
+
+    const speakOutput = 'hihi';
+
+    return handlerInput.responseBuilder
+      .speak(speakOutput)
+      .getResponse();
+  }
+};
+
 const HelpHandler = {
   canHandle(handlerInput) {
     return handlerInput.requestEnvelope.request.type === 'IntentRequest'
@@ -140,7 +182,9 @@ const skillBuilder = Alexa.SkillBuilders.custom();
 exports.handler = skillBuilder
   .addRequestHandlers(
     LaunchRequestHandler,
+    //MovesListHandler,
     //HelloHandler,
+    DemoDataHandler,
     HelpHandler,
     CancelAndStopHandler,
     SessionEndedRequestHandler,
