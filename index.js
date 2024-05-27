@@ -1,28 +1,20 @@
 const Alexa = require('ask-sdk-core');
 
-import { MongoClient } from "mongodb";
+const { MongoClient } = require('mongodb');
 
-const uri = "mongodb+srv://plebish:H20xLFJPDvxJJy16@cluster0.3pppkdk.mongodb.net/?appName=mongosh+2.2.6"
 
-const client = new MongoClient(uri);
+const uri = process.env.MONGODB_URI;
 
-async function run() {
-  try {
-    const database = client.db("insertDB");
-    const haiku = database.collection("haiku");
+let client;
 
-    const doc = {
-      title: "Record of seojdawd",
-      content: "No bytes"
-    }
-    const result = await haiku.insertOne(doc);
-
-    console.log(`a doc was inserted with the _id: ${result.insertedId}`);
-  } finally {
-    
-    await client.close();
+async function connectToDatabase() {
+  if (!client) {
+    client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
+    await client.connect();
   }
+  return client.db('test').collection('demo1');
 }
+
 
 const DOCUMENT_ID = "regal-visage";
 
@@ -98,12 +90,24 @@ const DemoDataHandler = {
     return Alexa.getRequestType(handlerInput.requestEnvelope) === 'IntentRequest'
       && Alexa.getIntentName(handlerInput.requestEnvelope) === 'DemoDataIntent';
   },
-  handle(handlerInput) {
-    
-    run().catch(console.dir);
+  async handle(handlerInput) {
+    const document = {
+      field1: "value1",
+      field2: "value2"
+    };
+
+    let responseMessage = "Document inserted succesfully";
+
+    try {
+      const collection = await connectToDatabase();
+      await collection.insertOne(document);
+    } catch (error) {
+        console.error(error);
+        responseMessage = "There was an error inserting the doc";
+    }
 
     return handlerInput.responseBuilder
-      .speak(speakOutput)
+      .speak(responseMessage)
       .getResponse();
   }
 };
@@ -183,7 +187,6 @@ exports.handler = skillBuilder
   .addRequestHandlers(
     LaunchRequestHandler,
     //MovesListHandler,
-    //HelloHandler,
     DemoDataHandler,
     HelpHandler,
     CancelAndStopHandler,
